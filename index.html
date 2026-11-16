@@ -2,66 +2,355 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>eSIMurik Mini App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>eSIMurik | Тарифы</title>
+    <!-- Подключаем официальный SDK Telegram -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* ... ваши стили ... */
+        :root {
+            /* Используем переменные Telegram для поддержки темной/светлой темы */
+            --bg-color: var(--tg-theme-bg-color, #ffffff);
+            --text-color: var(--tg-theme-text-color, #000000);
+            --hint-color: var(--tg-theme-hint-color, #999999);
+            --link-color: var(--tg-theme-link-color, #2481cc);
+            --button-color: var(--tg-theme-button-color, #2481cc);
+            --button-text-color: var(--tg-theme-button-text-color, #ffffff);
+            --secondary-bg: var(--tg-theme-secondary-bg-color, #f1f1f1);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 16px;
+            padding-bottom: 90px; /* Отступ для нижней кнопки Telegram */
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .header {
+            margin-bottom: 24px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0 0 8px 0;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: var(--hint-color);
+            font-size: 14px;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        /* Стили для стран */
+        .country-group {
+            margin-bottom: 24px;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        .country-header {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-left: 4px;
+        }
+
+        /* Стили для карточек тарифов */
+        .tarif-card {
+            background-color: var(--secondary-bg);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            border: 2px solid transparent; /* Рамка для выделения */
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tarif-card:active {
+            transform: scale(0.98);
+        }
+
+        .tarif-card.selected {
+            border-color: var(--button-color);
+            background-color: var(--button-color);
+            color: var(--button-text-color);
+        }
+
+        .tarif-card.selected .tarif-price {
+            color: var(--button-text-color);
+        }
+
+        .tarif-info {
+            font-weight: 500;
+            font-size: 15px;
+            flex: 1;
+        }
+
+        .tarif-price {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--link-color);
+            transition: color 0.2s;
+            white-space: nowrap;
+            margin-left: 12px;
+        }
+
+        /* Анимации */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
     </style>
 </head>
 <body>
 
-<h1>Привет, <span id="user-name">Гость</span>! 👋</h1>
-<p class="subtitle">Выберите страну и подходящий тариф для путешествий:</p>
-<div id="catalog"></div>
+    <div class="header">
+        <h1>Привет, <span id="user-name">Гость</span>! 👋</h1>
+        <p class="subtitle">Выберите страну и подходящий тариф для путешествий:</p>
+    </div>
 
-<script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
+    <!-- Контейнер для каталога -->
+    <div id="catalog"></div>
 
-    try {
-        const user = tg.initDataUnsafe?.user;
-        if (user && user.first_name) {
-            document.getElementById('user-name').innerText = user.first_name;
+    <script>
+        // 1. Инициализация Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Разворачиваем на весь экран
+
+        // Получаем имя пользователя
+        try {
+            const user = tg.initDataUnsafe?.user;
+            if (user && user.first_name) {
+                document.getElementById('user-name').innerText = user.first_name;
+            }
+        } catch(e) {
+            console.log("Имя не получено", e);
         }
-    } catch(e) { console.log("Имя не получено"); }
 
-    const mainButton = tg.MainButton;
-    mainButton.setText('Выберите тариф');
-    mainButton.hide();
-    mainButton.disable();
+        // 2. Настройка Главной кнопки (MainButton)
+        const mainButton = tg.MainButton;
+        mainButton.setText('Выберите тариф');
+        mainButton.hide(); // Скрываем до выбора
+        mainButton.disable();
 
-    const catalogData = [ /* ... ваши данные ... */ ];
+        // 3. База данных тарифов (все ваши страны)
+        const catalogData = [
+            {
+                country: "🇹🇷 Турция",
+                tariffs: [
+                    { name: "Unlimited 3 days", price: 500 },
+                    { name: "Unlimited 7 days", price: 1000 },
+                    { name: "Unlimited 14 days", price: 1800 },
+                    { name: "Unlimited 30 days", price: 3000 },
+                    { name: "5 GB - 30 days", price: 340 },
+                    { name: "10 GB - 30 days", price: 620 },
+                    { name: "20 GB - 30 days", price: 1190 }
+                ]
+            },
+            {
+                country: "🇦🇪 ОАЭ",
+                tariffs: [
+                    { name: "Unlimited 1 day", price: 400 },
+                    { name: "Unlimited 3 days", price: 1000 },
+                    { name: "Unlimited 7 days", price: 2400 },
+                    { name: "5 GB - 30 days", price: 1180 },
+                    { name: "10 GB - 30 days", price: 2280 },
+                    { name: "20 GB - 30 days", price: 4480 }
+                ]
+            },
+            {
+                country: "🇻🇳 Вьетнам",
+                tariffs: [
+                    { name: "Unlimited 1 day", price: 170 },
+                    { name: "Unlimited 3 days", price: 330 },
+                    { name: "Unlimited 7 days", price: 710 },
+                    { name: "5 GB - 30 days", price: 500 },
+                    { name: "10 GB - 30 days", price: 750 },
+                    { name: "20 GB - 30 days", price: 1330 }
+                ]
+            },
+            {
+                country: "🇰🇿 Казахстан",
+                tariffs: [
+                    { name: "Unlimited 1 day", price: 310 },
+                    { name: "Unlimited 3 days", price: 640 },
+                    { name: "Unlimited 7 days", price: 1310 },
+                    { name: "5 GB - 30 days", price: 730 },
+                    { name: "10 GB - 30 days", price: 1250 },
+                    { name: "20 GB - 30 days", price: 2200 }
+                ]
+            },
+            {
+                country: "🇹🇲 Туркменистан", // Исправил флаг и название
+                tariffs: [
+                    { name: "Unlimited 1 day", price: 310 },
+                    { name: "Unlimited 3 days", price: 640 },
+                    { name: "Unlimited 7 days", price: 1310 },
+                    { name: "5 GB - 30 days", price: 800 },
+                    { name: "10 GB - 30 days", price: 1250 },
+                    { name: "20 GB - 30 days", price: 1480 }
+                ]
+            },
+            {
+                country: "🇹🇭 Таиланд",
+                tariffs: [
+                    { name: "Unlimited 1 day", price: 210 },
+                    { name: "Unlimited 3 days", price: 670 },
+                    { name: "Unlimited 7 days", price: 1400 },
+                    { name: "5 GB - 30 days", price: 570 },
+                    { name: "10 GB - 30 days", price: 1000 },
+                    { name: "20 GB - 30 days", price: 2170 }
+                ]
+            },
+            {
+                country: "🇨🇳 Китай",
+                tariffs: [
+                    { name: "Unlimited 1 day", price: 400 },
+                    { name: "Unlimited 3 days", price: 810 },
+                    { name: "Unlimited 7 days", price: 1670 },
+                    { name: "5 GB - 30 days", price: 630 },
+                    { name: "10 GB - 30 days", price: 1250 },
+                    { name: "20 GB - 30 days", price: 2180 }
+                ]
+            },
+            {
+                country: "🇺🇸 США",
+                tariffs: [
+                    { name: "Unlimited 1 day", price: 210 },
+                    { name: "Unlimited 3 days", price: 540 },
+                    { name: "Unlimited 7 days", price: 1250 },
+                    { name: "5 GB - 30 days", price: 700 },
+                    { name: "10 GB - 30 days", price: 1290 },
+                    { name: "20 GB - 30 days", price: 2340 }
+                ]
+            },
+            {
+                country: "🇯🇵 Япония",
+                tariffs: [
+                    { name: "Unlimited 1 day", price: 1010 },
+                    { name: "Unlimited 3 days", price: 2870 },
+                    { name: "Unlimited 7 days", price: 6580 },
+                    { name: "5 GB - 30 days", price: 1650 },
+                    { name: "10 GB - 30 days", price: 3290 },
+                    { name: "20 GB - 30 days", price: 6580 }
+                ]
+            },
+            {
+                country: "🇦🇲 Армения",
+                tariffs: [
+                    { name: "Unlimited 1 day", price: 340 },
+                    { name: "Unlimited 3 days", price: 1030 },
+                    { name: "Unlimited 7 days", price: 2270 },
+                    { name: "5 GB - 30 days", price: 1040 },
+                    { name: "10 GB - 30 days", price: 1790 },
+                    { name: "20 GB - 30 days", price: 3070 }
+                ]
+            }
+        ];
 
-    const catalogContainer = document.getElementById('catalog');
-    catalogContainer.innerHTML = ''; // Очищаем перед отрисовкой
+        // Переменная для хранения выбранного тарифа
+        let selectedTarif = null;
 
-    catalogData.forEach(function(countryBlock) {
-        const header = document.createElement('div');
-        header.className = 'country-header';
-        header.innerText = countryBlock.country;
-        catalogContainer.appendChild(header);
+        // 4. Функция отрисовки каталога
+        const catalogContainer = document.getElementById('catalog');
+        catalogContainer.innerHTML = ''; // Очищаем
 
-        countryBlock.tariffs.forEach(function(tarif) {
-            const card = document.createElement('div');
-            card.className = 'tarif-card';
-            card.innerHTML = `
-                <div class="tarif-info">${tarif.name}</div>
-                <div class="tarif-price">${tarif.price} ₽</div>
-            `;
-            card.onclick = function() {
-                mainButton.setText(`Купить за ${tarif.price} ₽`);
-                mainButton.enable();
-                document.querySelectorAll('.tarif-card').forEach(c => c.style.border = 'none');
-                card.style.border = '2px solid #2481cc';
-            };
-            catalogContainer.appendChild(card);
+        catalogData.forEach(function(countryBlock) {
+            // Создаем группу для страны
+            const countryGroup = document.createElement('div');
+            countryGroup.className = 'country-group';
+
+            // Заголовок страны
+            const header = document.createElement('div');
+            header.className = 'country-header';
+            header.innerText = countryBlock.country;
+            countryGroup.appendChild(header);
+
+            // Карточки тарифов
+            countryBlock.tariffs.forEach(function(tarif) {
+                const card = document.createElement('div');
+                card.className = 'tarif-card';
+                card.innerHTML = `
+                    <div class="tarif-info">${tarif.name}</div>
+                    <div class="tarif-price">${tarif.price} ₽</div>
+                `;
+
+                // Логика при клике на карточку
+                card.onclick = function() {
+                    // Убираем класс "selected" у всех карточек
+                    document.querySelectorAll('.tarif-card').forEach(c => c.classList.remove('selected'));
+                    
+                    // Добавляем класс "selected" текущей
+                    card.classList.add('selected');
+
+                    // Запоминаем выбор
+                    selectedTarif = {
+                        country: countryBlock.country,
+                        name: tarif.name,
+                        price: tarif.price
+                    };
+
+                    // Обновляем и показываем главную кнопку
+                    mainButton.setText(`Купить за ${tarif.price} ₽`);
+                    mainButton.enable();
+                    mainButton.show();
+
+                    // Вибро-отклик (если поддерживается)
+                    tg.HapticFeedback.impactOccurred('light');
+                };
+
+                countryGroup.appendChild(card);
+            });
+
+            catalogContainer.appendChild(countryGroup);
         });
-    });
 
-    mainButton.onClick(function() {
-        // Логика отправки данных боту
-    });
-</script>
+        // 5. Обработка нажатия на главную кнопку Telegram
+        mainButton.onClick(function() {
+            if (!selectedTarif) return;
+
+            // Здесь мы отправляем данные боту
+            // Бот получит это сообщение и сможет выставить счет
+            const dataToSend = {
+                action: "buy_esim",
+                country: selectedTarif.country,
+                tarif: selectedTarif.name,
+                price: selectedTarif.price
+            };
+
+            tg.sendData(JSON.stringify(dataToSend));
+            
+            // Опционально: можно закрыть окно после отправки
+            // tg.close(); 
+        });
+
+        // Применяем цвет темы Telegram к главной кнопке (если нужно)
+        mainButton.color = tg.themeParams.button_color || '#2481cc';
+        mainButton.textColor = tg.themeParams.button_text_color || '#ffffff';
+
+    </script>
 </body>
 </html>
