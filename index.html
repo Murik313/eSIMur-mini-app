@@ -150,13 +150,73 @@
             console.log("Имя не получено", e);
         }
 
-        // 2. Настройка Главной кнопки (MainButton)
+        // 2. Настройка Главной кнопки
         const mainButton = tg.MainButton;
         mainButton.setText('Выберите тариф');
-        mainButton.hide(); // Скрываем до выбора
+        mainButton.hide();
         mainButton.disable();
 
-        // 3. База данных тарифов (все ваши страны)
+        // Переменная для хранения выбранного тарифа
+        let selectedTarif = null;
+
+        // 3. Функция отрисовки (оставляем как было, но добавляем логи)
+        // ... (ваш forEach с карточками) ...
+        
+        // Внутри card.onclick:
+        card.onclick = function() {
+            document.querySelectorAll('.tarif-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            
+            selectedTarif = {
+                country: countryBlock.country,
+                name: tarif.name,
+                price: tarif.price
+            };
+            
+            // Включаем кнопку
+            mainButton.setText(`Купить за ${tarif.price} ₽`);
+            mainButton.enable();
+            mainButton.show();
+            
+            // Лог для проверки
+            console.log("Выбран тариф:", selectedTarif);
+        };
+
+        // 3. Обработчик нажатия на кнопку
+        mainButton.onClick(function() {
+            console.log("Кнопка нажата!"); // Проверяем, срабатывает ли клик
+            
+            if (!selectedTarif) {
+                tg.showAlert("Сначала выберите тариф!");
+                return;
+            }
+
+            const dataToSend = {
+                action: "buy_esim",
+                country: selectedTarif.country,
+                tarif: selectedTarif.name,
+                price: selectedTarif.price
+            };
+
+            console.log("Отправляем данные:", dataToSend);
+
+            try {
+                // Отправка данных боту
+                tg.sendData(JSON.stringify(dataToSend));
+                
+                // Показываем уведомление, что данные отправлены
+                tg.showPopup({
+                    title: "Успех",
+                    message: "Данные отправлены боту!",
+                    buttons: [{type: "ok"}]
+                });
+            } catch (e) {
+                console.error("Ошибка отправки:", e);
+                tg.showAlert("Ошибка отправки: " + e.message);
+            }
+        });
+
+        // 4. База данных тарифов (все ваши страны)
         const catalogData = [
             {
                 country: "🇹🇷 Турция",
@@ -274,7 +334,7 @@
         // Переменная для хранения выбранного тарифа
         let selectedTarif = null;
 
-        // 4. Функция отрисовки каталога
+        // 5. Функция отрисовки каталога
         const catalogContainer = document.getElementById('catalog');
         catalogContainer.innerHTML = ''; // Очищаем
 
@@ -328,7 +388,7 @@
             catalogContainer.appendChild(countryGroup);
         });
 
-        // 5. Обработка нажатия на главную кнопку Telegram
+        // 6. Обработка нажатия на главную кнопку Telegram
         mainButton.onClick(function() {
             if (!selectedTarif) return;
 
