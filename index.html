@@ -2,25 +2,23 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" 
+content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>eSIMurik Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* Базовые стили */
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
             padding: 16px;
-            padding-bottom: 90px; /* Отступ снизу для кнопки */
+            padding-bottom: 90px;
             background-color: var(--tg-theme-bg-color, #ffffff);
             color: var(--tg-theme-text-color, #000000);
         }
-        
         h1 { font-size: 22px; margin-top: 10px; margin-bottom: 5px; }
         .subtitle { color: gray; font-size: 14px; margin-bottom: 20px; }
 
-        /* Стили для карточек тарифов */
-        .tariff-card {
+        .tarif-card {
             background-color: var(--tg-theme-secondary-bg-color, #f1f1f1);
             border-radius: 12px;
             padding: 14px 16px;
@@ -31,13 +29,12 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
-        .tariff-card:active {
+        .tarif-card:active {
             background-color: var(--tg-theme-hint-color, #e0e0e0);
         }
-        .tariff-info { font-weight: 500; font-size: 15px; }
-        .tariff-price { font-weight: bold; font-size: 15px; }
-        
-        /* Заголовок страны */
+        .tarif-info { font-weight: 500; font-size: 15px; }
+        .tarif-price { font-weight: bold; font-size: 15px; }
+
         .country-header {
             font-size: 18px;
             font-weight: bold;
@@ -50,183 +47,196 @@
     </style>
 </head>
 <body>
-    <h1>Привет, <span id="user-name">гость</span>! 👋</h1>
-    <p class="subtitle">Выберите страну и подходящий тариф для путешествий:</p>
 
-    <!-- Контейнер, куда скрипт будет вставлять карточки -->
-    <div id="catalog"></div>
+<h1>Привет, <span id="user-name">Гость</span>! 👋</h1>
+<p class="subtitle">Выберите страну и подходящий тариф для путешествий:</p>
 
-    <script>
-        // Инициализация Telegram
-        const tg = window.Telegram.WebApp;
-        tg.expand(); 
-        
+<!-- Сюда будут вставляться карточки -->
+<div id="catalog"></div>
+
+<script>
+    // 1. Инициализация Telegram
+    window.Telegram.WebApp.expand();
+
+    // /! Получаем подпись имя
+    try {
         const user = tg.initDataUnsafe?.user;
-        if (user) {
+        if (user && user.first_name) {
             document.getElementById('user-name').innerText = user.first_name;
         }
+    } catch(e) {
+        console.log("Имя не получено");
+    }
 
-        // Главная кнопка
-        const mainButton = tg.MainButton;
-        mainButton.setText("Выберите тариф");
-        mainButton.show();
-        mainButton.disable();
+    // 2. Настройка Главной кнопки
+    const mainButton = tg.MainButton;
+    mainButton.setText('Выберите тариф');
+    mainButton.hide();
+    mainButton.disable();
 
-        // Наш каталог (данные из ваших скриншотов)
-        const catalogData = [
-            {
-                country: "🇹🇷 Турция",
-                tariffs: [
-                    { name: "Unlimited · 3 days", price: 500 },
-                    { name: "Unlimited · 7 days", price: 1000 },
-                    { name: "Unlimited · 14 days", price: 1880 },
-                    { name: "Unlimited · 30 days", price: 3880 },
-                    { name: "5 GB · 30 days", price: 360 },
-                    { name: "10 GB · 30 days", price: 620 },
-                    { name: "20 GB · 30 days", price: 1190 }
-                ]
-            },
-            {
-                country: "🇦🇪 ОАЭ",
-                tariffs: [
-                    { name: "Unlimited · 1 day", price: 400 },
-                    { name: "Unlimited · 3 days", price: 1080 },
-                    { name: "Unlimited · 7 days", price: 2440 },
-                    { name: "5 GB · 30 days", price: 1180 },
-                    { name: "10 GB · 30 days", price: 2280 },
-                    { name: "20 GB · 30 days", price: 4480 }
-                ]
-            },
-            {
-                country: "🇻🇳 Вьетнам",
-                tariffs: [
-                    { name: "Unlimited · 1 day", price: 170 },
-                    { name: "Unlimited · 3 days", price: 330 },
-                    { name: "Unlimited · 7 days", price: 710 },
-                    { name: "5 GB · 30 days", price: 500 },
-                    { name: "10 GB · 30 days", price: 750 },
-                    { name: "20 GB · 30 days", price: 1330 }
-                ]
-            },
-            {
-                country: "🇰🇿 Казахстан",
-                tariffs: [
-                    { name: "Unlimited · 1 day", price: 310 },
-                    { name: "Unlimited · 3 days", price: 660 },
-                    { name: "Unlimited · 7 days", price: 1310 },
-                    { name: "5 GB · 30 days", price: 730 },
-                    { name: "10 GB · 30 days", price: 1250 },
-                    { name: "20 GB · 30 days", price: 2200 }
-                ]
-            },
-            {
-                country: "🇬🇪 Грузия",
-                tariffs: [
-                    { name: "Unlimited · 1 day", price: 310 },
-                    { name: "Unlimited · 3 days", price: 660 },
-                    { name: "Unlimited · 7 days", price: 1310 },
-                    { name: "5 GB · 30 days", price: 800 },
-                    { name: "10 GB · 30 days", price: 1250 },
-                    { name: "20 GB · 30 days", price: 1480 }
-                ]
-            },
-            {
-                country: "🇹🇭 Таиланд",
-                tariffs: [
-                    { name: "Unlimited · 1 day", price: 210 },
-                    { name: "Unlimited · 3 days", price: 670 },
-                    { name: "Unlimited · 7 days", price: 1460 },
-                    { name: "5 GB · 30 days", price: 570 },
-                    { name: "10 GB · 30 days", price: 1000 },
-                    { name: "20 GB · 30 days", price: 2170 }
-                ]
-            },
-            {
-                country: "🇨🇳 Китай",
-                tariffs: [
-                    { name: "Unlimited · 1 day", price: 480 },
-                    { name: "Unlimited · 3 days", price: 810 },
-                    { name: "Unlimited · 7 days", price: 1670 },
-                    { name: "5 GB · 30 days", price: 630 },
-                    { name: "10 GB · 30 days", price: 1250 },
-                    { name: "20 GB · 30 days", price: 2180 }
-                ]
-            },
-            {
-                country: "🇺🇸 США",
-                tariffs: [
-                    { name: "Unlimited · 1 day", price: 210 },
-                    { name: "Unlimited · 3 days", price: 540 },
-                    { name: "Unlimited · 7 days", price: 1250 },
-                    { name: "5 GB · 30 days", price: 700 },
-                    { name: "10 GB · 30 days", price: 1290 },
-                    { name: "20 GB · 30 days", price: 2360 }
-                ]
-            },
-            {
-                country: "🇯🇴 Иордания",
-                tariffs: [
-                    { name: "Unlimited · 1 day", price: 1010 },
-                    { name: "Unlimited · 3 days", price: 2870 },
-                    { name: "Unlimited · 7 days", price: 6580 },
-                    { name: "5 GB · 30 days", price: 1650 },
-                    { name: "10 GB · 30 days", price: 3290 },
-                    { name: "20 GB · 30 days", price: 6580 }
-                ]
-            },
-            {
-                country: "🇦🇲 Армения",
-                tariffs: [
-                    { name: "Unlimited · 1 day", price: 340 },
-                    { name: "Unlimited · 3 days", price: 1030 },
-                    { name: "Unlimited · 7 days", price: 2270 },
-                    { name: "5 GB · 30 days", price: 1040 },
-                    { name: "10 GB · 30 days", price: 1790 },
-                    { name: "20 GB · 30 days", price: 3070 }
-                ]
-            }
-        ];
+    // 3. Массив с данными
+    const catalogData = [
+        {
+            country: "🇹🇷 Турция",
+            tariffs: [
+                { name: "Unlimited 3 days", price: 500 },
+                { name: "Unlimited 7 days", price: 1000 },
+                { name: "Unlimited 14 days", price: 1800 },
+                { name: "Unlimited 30 days", price: 3000 },
+                { name: "5 GB - 30 days", price: 340 },
+                { name: "10 GB - 30 days", price: 620 },
+                { name: "20 GB - 30 days", price: 1190 }
+            ]
+        },
+        {
+            country: "🇦🇪 ОАЭ",
+            tariffs: [
+                { name: "Unlimited 1 day", price: 400 },
+                { name: "Unlimited 3 days", price: 1000 },
+                { name: "Unlimited 7 days", price: 2400 },
+                { name: "5 GB - 30 days", price: 1180 },
+                { name: "10 GB - 30 days", price: 2280 },
+                { name: "20 GB - 30 days", price: 4480 }
+            ]
+        },
+        {
+            country: "🇻🇳 Вьетнам",
+            tariffs: [
+                { name: "Unlimited 1 day", price: 170 },
+                { name: "Unlimited 3 days", price: 330 },
+                { name: "Unlimited 7 days", price: 710 },
+                { name: "5 GB - 30 days", price: 500 },
+                { name: "10 GB - 30 days", price: 750 },
+                { name: "20 GB - 30 days", price: 1330 }
+            ]
+        },
+        {
+            country: "🇰🇿 Казахстан",
+            tariffs: [
+                { name: "Unlimited 1 day", price: 310 },
+                { name: "Unlimited 3 days", price: 640 },
+                { name: "Unlimited 7 days", price: 1310 },
+                { name: "5 GB - 30 days", price: 730 },
+                { name: "10 GB - 30 days", price: 1250 },
+                { name: "20 GB - 30 days", price: 2200 }
+            ]
+        },
+        {
+            country: "🇹🇲 Турция",
+            tariffs: [
+                { name: "Unlimited 1 day", price: 310 },
+                { name: "Unlimited 3 days", price: 640 },
+                { name: "Unlimited 7 days", price: 1310 },
+                { name: "5 GB - 30 days", price: 800 },
+                { name: "10 GB - 30 days", price: 1250 },
+                { name: "20 GB - 30 days", price: 1480 }
+            ]
+        },
+        {
+            country: "🇹🇭 Таиланд",
+            tariffs: [
+                { name: "Unlimited 1 day", price: 210 },
+                { name: "Unlimited 3 days", price: 670 },
+                { name: "Unlimited 7 days", price: 1400 },
+                { name: "5 GB - 30 days", price: 570 },
+                { name: "10 GB - 30 days", price: 1000 },
+                { name: "20 GB - 30 days", price: 2170 }
+            ]
+        },
+        {
+            country: "🇨🇳 Китай",
+            tariffs: [
+                { name: "Unlimited 1 day", price: 400 },
+                { name: "Unlimited 3 days", price: 810 },
+                { name: "Unlimited 7 days", price: 1670 },
+                { name: "5 GB - 30 days", price: 630 },
+                { name: "10 GB - 30 days", price: 1250 },
+                { name: "20 GB - 30 days", price: 2180 }
+            ]
+        },
+        {
+            country: "🇺🇸 США",
+            tariffs: [
+                { name: "Unlimited 1 day", price: 210 },
+                { name: "Unlimited 3 days", price: 540 },
+                { name: "Unlimited 7 days", price: 1250 },
+                { name: "5 GB - 30 days", price: 700 },
+                { name: "10 GB - 30 days", price: 1290 },
+                { name: "20 GB - 30 days", price: 2340 }
+            ]
+        },
+        {
+            country: "🇯🇵 Япония",
+            tariffs: [
+                { name: "Unlimited 1 day", price: 1010 },
+                { name: "Unlimited 3 days", price: 2870 },
+                { name: "Unlimited 7 days", price: 6580 },
+                { name: "5 GB - 30 days", price: 1650 },
+                { name: "10 GB - 30 days", price: 3290 },
+                { name: "20 GB - 30 days", price: 6580 }
+            ]
+        },
+        {
+            country: "🇦🇲 Армения",
+            tariffs: [
+                { name: "Unlimited 1 day", price: 340 },
+                { name: "Unlimited 3 days", price: 1030 },
+                { name: "Unlimited 7 days", price: 2270 },
+                { name: "5 GB - 30 days", price: 1040 },
+                { name: "10 GB - 30 days", price: 1790 },
+                { name: "20 GB - 30 days", price: 3070 }
+            ]
+        }
+    ];
 
-        // Функция для отрисовки сайта (берет данные из catalogData)
-        const catalogContainer = document.getElementById('catalog');
-        
-        catalogData.forEach(countryBlock => {
-            // Добавляем заголовок страны
-            let header = document.createElement('div');
-            header.className = 'country-header';
-            header.innerText = countryBlock.country;
-            catalogContainer.appendChild(header);
+    // 4. Отрисовка каталога
+    const catalogContainer = document.getElementById('catalog');
 
-            // Добавляем тарифы
-            countryBlock.tariffs.forEach(tariff => {
-                let card = document.createElement('div');
-                card.className = 'tariff-card';
-                
-                // Внутренности карточки
-                card.innerHTML = `
-                    <div class="tariff-info">${tariff.name}</div>
-                    <div class="tariff-price">${tariff.price} ₽</div>
-                `;
+    // Проходимся по каждой стране
+    catalogData.forEach(function(countryBlock) {
 
-                // Логика при клике на карточку
-                card.onclick = () => {
-                    // Меняем текст на главной кнопке
-                    mainButton.setText(⁠ Купить за ${tariff.price} ₽ ⁠);
-                    mainButton.enable(); // Активируем (делаем синей)
-                    
-                    // Подсвечиваем выбранную карточку (опционально)
-                    document.querySelectorAll('.tariff-card').forEach(c => c.style.border = 'none');
-                    card.style.border = '2px solid #2481cc';
-                };
+        // Создаем заголовок страны
+        const header = document.createElement('div');
+        header.className = 'country-header';
+        header.innerText = countryBlock.country;
+        catalogContainer.appendChild(header);
 
-                catalogContainer.appendChild(card);
-            });
+        // Проходимся по тарифам внутри страны
+        countryBlock.tariffs.forEach(function(tarif) {
+
+            const card = document.createElement('div');
+            card.className = 'tarif-card';
+
+            card.innerHTML = `
+                <div class="tarif-info">${tarif.name}</div>
+                <div class="tarif-price">${tarif.price} ₽</div>
+            `;
+
+            // Кнопка по карточке
+            card.onclick = function() {
+
+                // Меняем кнопку
+                mainButton.setText(`Купить за ${tarif.price} ₽`);
+                mainButton.enable();
+
+                // Убираем рамки у всех
+                const allCards = document.querySelectorAll('.tarif-card');
+                for(let i=0; i < allCards.length; i++) {
+                    allCards[i].style.border = 'none';
+                }
+
+                // Ставим рамку выбранной
+                card.style.border = '2px solid #2481cc';
+            };
+
+            catalogContainer.appendChild(card);
         });
+    });
 
-        // Обработка нажатия на главную кнопку "Купить"
-        mainButton.onClick(function() {
-            tg.showAlert(⁠ Переход к оплате... (здесь будет интеграция с платежной системой) ⁠);
-        });
-    </script>
+    // 5. Ждем нажатие на главную кнопку
+    mainButton.onClick(function() {
+        // Тут логика отправки данных боту...
+    });
+</script>
 </body>
 </html>
