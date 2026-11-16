@@ -2,13 +2,11 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>eSIMurik | Тарифы</title>
-    <!-- Подключаем официальный SDK Telegram -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            /* Используем переменные Telegram для поддержки темной/светлой темы */
             --bg-color: var(--tg-theme-bg-color, #ffffff);
             --text-color: var(--tg-theme-text-color, #000000);
             --hint-color: var(--tg-theme-hint-color, #999999);
@@ -16,6 +14,8 @@
             --button-color: var(--tg-theme-button-color, #2481cc);
             --button-text-color: var(--tg-theme-button-text-color, #ffffff);
             --secondary-bg: var(--tg-theme-secondary-bg-color, #f1f1f1);
+            --card-border-radius: 16px;
+            --card-padding: 16px;
         }
 
         * {
@@ -27,33 +27,34 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
             padding: 16px;
-            padding-bottom: 90px; /* Отступ для нижней кнопки Telegram */
+            padding-bottom: 100px;
             background-color: var(--bg-color);
             color: var(--text-color);
             transition: background-color 0.3s, color 0.3s;
+            -webkit-font-smoothing: antialiased;
         }
 
         .header {
             margin-bottom: 24px;
-            animation: fadeIn 0.5s ease-out;
+            animation: fadeIn 0.4s ease-out;
         }
 
         h1 {
-            font-size: 24px;
+            font-size: 26px;
             margin: 0 0 8px 0;
             font-weight: 700;
+            letter-spacing: -0.5px;
         }
 
         .subtitle {
             color: var(--hint-color);
-            font-size: 14px;
+            font-size: 15px;
             margin: 0;
-            line-height: 1.4;
+            line-height: 1.5;
         }
 
-        /* Стили для стран */
         .country-group {
-            margin-bottom: 24px;
+            margin-bottom: 28px;
             animation: slideUp 0.4s ease-out;
         }
 
@@ -67,18 +68,17 @@
             padding-left: 4px;
         }
 
-        /* Стили для карточек тарифов */
         .tarif-card {
             background-color: var(--secondary-bg);
-            border-radius: 12px;
-            padding: 16px;
+            border-radius: var(--card-border-radius);
+            padding: var(--card-padding);
             margin-bottom: 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             cursor: pointer;
-            border: 2px solid transparent; /* Рамка для выделения */
-            transition: all 0.2s ease;
+            border: 2px solid transparent;
+            transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
             position: relative;
             overflow: hidden;
         }
@@ -91,6 +91,7 @@
             border-color: var(--button-color);
             background-color: var(--button-color);
             color: var(--button-text-color);
+            box-shadow: 0 4px 12px rgba(36, 129, 204, 0.2);
         }
 
         .tarif-card.selected .tarif-price {
@@ -119,10 +120,15 @@
         }
 
         @keyframes slideUp {
-            from { opacity: 0; transform: translateY(10px); }
+            from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* Стили для скролла (опционально) */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
     </style>
 </head>
 <body>
@@ -132,13 +138,13 @@
         <p class="subtitle">Выберите страну и подходящий тариф для путешествий:</p>
     </div>
 
-    <!-- Контейнер для каталога -->
     <div id="catalog"></div>
 
     <script>
         // 1. Инициализация Telegram WebApp
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Разворачиваем на весь экран
+        tg.expand();
+        tg.ready(); // Сообщаем Telegram, что приложение готово
 
         // Получаем имя пользователя
         try {
@@ -155,68 +161,10 @@
         mainButton.setText('Выберите тариф');
         mainButton.hide();
         mainButton.disable();
+        mainButton.color = tg.themeParams.button_color || '#2481cc';
+        mainButton.textColor = tg.themeParams.button_text_color || '#ffffff';
 
-        // Переменная для хранения выбранного тарифа
-        let selectedTarif = null;
-
-        // 3. Функция отрисовки (оставляем как было, но добавляем логи)
-        // ... (ваш forEach с карточками) ...
-        
-        // Внутри card.onclick:
-        card.onclick = function() {
-            document.querySelectorAll('.tarif-card').forEach(c => c.classList.remove('selected'));
-            card.classList.add('selected');
-            
-            selectedTarif = {
-                country: countryBlock.country,
-                name: tarif.name,
-                price: tarif.price
-            };
-            
-            // Включаем кнопку
-            mainButton.setText(`Купить за ${tarif.price} ₽`);
-            mainButton.enable();
-            mainButton.show();
-            
-            // Лог для проверки
-            console.log("Выбран тариф:", selectedTarif);
-        };
-
-        // 3. Обработчик нажатия на кнопку
-        mainButton.onClick(function() {
-            console.log("Кнопка нажата!"); // Проверяем, срабатывает ли клик
-            
-            if (!selectedTarif) {
-                tg.showAlert("Сначала выберите тариф!");
-                return;
-            }
-
-            const dataToSend = {
-                action: "buy_esim",
-                country: selectedTarif.country,
-                tarif: selectedTarif.name,
-                price: selectedTarif.price
-            };
-
-            console.log("Отправляем данные:", dataToSend);
-
-            try {
-                // Отправка данных боту
-                tg.sendData(JSON.stringify(dataToSend));
-                
-                // Показываем уведомление, что данные отправлены
-                tg.showPopup({
-                    title: "Успех",
-                    message: "Данные отправлены боту!",
-                    buttons: [{type: "ok"}]
-                });
-            } catch (e) {
-                console.error("Ошибка отправки:", e);
-                tg.showAlert("Ошибка отправки: " + e.message);
-            }
-        });
-
-        // 4. База данных тарифов (все ваши страны)
+        // 3. База данных тарифов (ваши данные)
         const catalogData = [
             {
                 country: "🇹🇷 Турция",
@@ -264,7 +212,7 @@
                 ]
             },
             {
-                country: "🇹🇲 Туркменистан", // Исправил флаг и название
+                country: "🇹🇲 Туркменистан",
                 tariffs: [
                     { name: "Unlimited 1 day", price: 310 },
                     { name: "Unlimited 3 days", price: 640 },
@@ -331,25 +279,21 @@
             }
         ];
 
-        // Переменная для хранения выбранного тарифа
         let selectedTarif = null;
 
-        // 5. Функция отрисовки каталога
+        // 4. Отрисовка каталога
         const catalogContainer = document.getElementById('catalog');
-        catalogContainer.innerHTML = ''; // Очищаем
+        catalogContainer.innerHTML = '';
 
         catalogData.forEach(function(countryBlock) {
-            // Создаем группу для страны
             const countryGroup = document.createElement('div');
             countryGroup.className = 'country-group';
 
-            // Заголовок страны
             const header = document.createElement('div');
             header.className = 'country-header';
             header.innerText = countryBlock.country;
             countryGroup.appendChild(header);
 
-            // Карточки тарифов
             countryBlock.tariffs.forEach(function(tarif) {
                 const card = document.createElement('div');
                 card.className = 'tarif-card';
@@ -358,28 +302,24 @@
                     <div class="tarif-price">${tarif.price} ₽</div>
                 `;
 
-                // Логика при клике на карточку
                 card.onclick = function() {
-                    // Убираем класс "selected" у всех карточек
                     document.querySelectorAll('.tarif-card').forEach(c => c.classList.remove('selected'));
-                    
-                    // Добавляем класс "selected" текущей
                     card.classList.add('selected');
 
-                    // Запоминаем выбор
                     selectedTarif = {
                         country: countryBlock.country,
                         name: tarif.name,
                         price: tarif.price
                     };
 
-                    // Обновляем и показываем главную кнопку
                     mainButton.setText(`Купить за ${tarif.price} ₽`);
                     mainButton.enable();
                     mainButton.show();
 
-                    // Вибро-отклик (если поддерживается)
-                    tg.HapticFeedback.impactOccurred('light');
+                    // Тактильная отдача
+                    if (tg.HapticFeedback) {
+                        tg.HapticFeedback.impactOccurred('light');
+                    }
                 };
 
                 countryGroup.appendChild(card);
@@ -388,12 +328,13 @@
             catalogContainer.appendChild(countryGroup);
         });
 
-        // 6. Обработка нажатия на главную кнопку Telegram
+        // 5. Обработка нажатия на Главную кнопку
         mainButton.onClick(function() {
-            if (!selectedTarif) return;
+            if (!selectedTarif) {
+                tg.showAlert("Пожалуйста, выберите тариф!");
+                return;
+            }
 
-            // Здесь мы отправляем данные боту
-            // Бот получит это сообщение и сможет выставить счет
             const dataToSend = {
                 action: "buy_esim",
                 country: selectedTarif.country,
@@ -401,16 +342,21 @@
                 price: selectedTarif.price
             };
 
-            tg.sendData(JSON.stringify(dataToSend));
-            
-            // Опционально: можно закрыть окно после отправки
-            // tg.close(); 
+            try {
+                // Отправляем данные боту
+                tg.sendData(JSON.stringify(dataToSend));
+                
+                // Показываем уведомление об успехе
+                tg.showPopup({
+                    title: "✅ Заказ оформлен",
+                    message: `Вы выбрали: ${selectedTarif.country}\nТариф: ${selectedTarif.name}\nЦена: ${selectedTarif.price} ₽`,
+                    buttons: [{type: "ok"}]
+                });
+            } catch (e) {
+                console.error("Ошибка отправки:", e);
+                tg.showAlert("Не удалось отправить данные. Попробуйте ещё раз.");
+            }
         });
-
-        // Применяем цвет темы Telegram к главной кнопке (если нужно)
-        mainButton.color = tg.themeParams.button_color || '#2481cc';
-        mainButton.textColor = tg.themeParams.button_text_color || '#ffffff';
-
     </script>
 </body>
 </html>
