@@ -1,52 +1,36 @@
-<! DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
-‹title>eSIMurik Mini App</title>
-‹! -- 1. Подключаем скрипт Telegram
-‹script src="https://telegram.org/
-js/telegram-web-app.js"></script>
-‹style>
-/* Простые стили, чтобы было
-красиво */
-body {
-font-family: -apple-system,
-BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-padding: 20px;
-background-color: var(--tg-
-theme-bg-color, #ffffff) ; /* Цвет фона
-как в Telegram */
-color: var(--tg-theme-text-
-color, #000000); /* Цвет текста как в
-Telegram */ text-align: center;
-}
-h1 { font-size: 24px; } p { color: gray; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eSIMurik Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 20px;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            text-align: center;
+            margin: 0;
+        }
+        h1 { font-size: 24px; margin-top: 40px; }
+        p { color: gray; }
+    </style>
 </head>
 <body>
-<h1>Привет, ‹span id="user-
-name">гость</span>! </h1>
-<р>Это мое первое Mini Арр. </р>
-‹script>
-// 2. Инициализируем Telegram
-WebApp
-const tg =
-window.Telegram.WebApp;
-/ Раскрываем приложение на
-весь экран (убираем сворачивание)
-tg. expand() ;
-// 3. Получаем данные
-пользователя
-const user =
-tg. initDataUnsafe?.user;
-| Если Telegram передал имя,
-выводим его
-if (user) {
-document.getElementById|' user-
-name'). innerText = user.first_name;
-}
-</script>
-</body> 
+    <h1>Привет, <span id="user-name">гость</span>!</h1>
+    <p>Это мое первое Mini App.</p>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand(); 
+
+        const user = tg.initDataUnsafe?.user;
+        
+        if (user) {
+            document.getElementById('user-name').innerText = user.first_name;
+        }
+    </script>
+</body>
 </html>
