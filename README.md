@@ -1,1 +1,1 @@
-# eSIMurik-mini-app
+# eSIMur-mini-app
