@@ -368,6 +368,49 @@ nav button.active span{
     font-size:14px;
     margin-bottom:0;
 }
+
+.profile-card{
+    background:linear-gradient(145deg,#173b59,#111e30);
+    border:1px solid #38bdf840;
+    border-radius:26px;
+    padding:28px 20px;
+    text-align:center;
+}
+
+.profile-avatar{
+    width:80px;
+    height:80px;
+    margin:0 auto 18px;
+    border-radius:50%;
+    background:linear-gradient(135deg,#38bdf8,#0369a1);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:36px;
+    font-weight:800;
+    color:white;
+}
+
+.profile-verified{
+    color:#4ade80;
+    font-size:14px;
+}
+
+.profile-link{
+    width:100%;
+    margin:6px 0;
+    padding:20px;
+    border:1px solid #293d55;
+    border-radius:18px;
+    font-weight:600;
+}
+
+.profile-version{
+    text-align:center;
+    font-size:12px;
+    color:#64748b;
+    margin-top:28px;
+}
 </style>
 
 </head>
@@ -811,30 +854,94 @@ $('otherText').textContent=e.message;
 }
 }
 
+
 async function renderProfile(){
-$('otherTitle').textContent='Профиль';
-$('otherText').textContent='Проверка авторизации…';
-show('other');
+    $('otherTitle').textContent='Профиль';
+    $('otherText').textContent='Загрузка профиля…';
+    show('other');
 
-const user=await loadProfile();
+    const user=await loadProfile();
 
-if(currentTab!=='profile')return;
+    if(currentTab!=='profile')return;
 
-if(!user){
-$('otherText').textContent='Не удалось подтвердить авторизацию Telegram.';
-return;
+    if(!user){
+        $('otherText').textContent='Не удалось подтвердить авторизацию Telegram.';
+        return;
+    }
+
+    const root=$('otherText');
+    root.replaceChildren();
+
+    const card=element('div',undefined,'profile-card');
+
+    const name=user.first_name||'Пользователь';
+
+    card.append(
+        element('div',name.charAt(0).toUpperCase(),'profile-avatar'),
+        element('h2',name),
+        element('p','✓ Аккаунт подтверждён','profile-verified'),
+        element('small','Telegram ID: '+user.telegram_id)
+    );
+
+    root.append(card);
+
+    const stats=element('div',undefined,'stats');
+
+    const orders=element('div',undefined,'note');
+    const orderCount=element('h2','…');
+
+    orders.append(
+        element('small','Мои заказы'),
+        orderCount
+    );
+
+    const active=element('div',undefined,'note');
+
+    active.append(
+        element('small','Активные eSIM'),
+        element('h2','0')
+    );
+
+    stats.append(orders,active);
+    root.append(stats);
+
+    const links=[
+        ['📱 Мои eSIM','esim'],
+        ['🎧 Поддержка','help']
+    ];
+
+    links.forEach(([title,tab])=>{
+        const button=element('button',title+' →','profile-link');
+
+        button.onclick=()=>{
+            document.querySelector('[data-tab="'+tab+'"]').click();
+        };
+
+        root.append(button);
+    });
+
+    const about=element('details',undefined,'support-card');
+
+    about.append(
+        element('summary','ℹ️ О сервисе eSIMur'),
+        element('p','Мобильный интернет для путешествий. Сервис работает в тестовом режиме.')
+    );
+
+    root.append(
+        about,
+        element('p','eSIMur · Version 2.0','profile-version')
+    );
+
+    try{
+        const result=await api('/orders');
+        orderCount.textContent=Array.isArray(result.orders)
+            ?String(result.orders.length)
+            :'—';
+    }catch(e){
+        orderCount.textContent='—';
+    }
 }
 
-const card=element('div',undefined,'note');
-
-card.append(
-element('h2',user.first_name||'Пользователь'),
-element('p','Telegram ID: '+user.telegram_id),
-element('p','Авторизация подтверждена')
-);
-
-$('otherText').replaceChildren(card);
-}
 
 function renderSupport(){
     $('otherTitle').textContent='Поддержка';
