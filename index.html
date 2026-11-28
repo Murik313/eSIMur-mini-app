@@ -6,35 +6,242 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>eSIMur</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#080f1c;color:#eef6ff;font:16px system-ui}
-main{max-width:640px;margin:auto;padding:20px 16px 110px}
-h1{color:#38bdf8;font-style:italic;margin:0 0 20px}
-h2{font-size:21px}
-p,small{color:#a5b8ce;line-height:1.5}
-.hero{background:linear-gradient(125deg,#123b62,#102036);padding:24px;border-radius:22px}
-input,select,button{font:inherit;color:inherit}
-input,select{width:100%;background:#172438;border:1px solid #30445e;border-radius:12px;padding:13px;margin-top:12px}
-button{cursor:pointer;border:0;border-radius:12px;background:#142236;padding:14px;text-align:left}
-button:disabled{opacity:.5;cursor:default}
-button:focus-visible{outline:2px solid #38bdf8}
-.country{display:flex;align-items:center;gap:12px;width:100%;margin:7px 0}
-.flag{font-size:26px}
-.price{margin-left:auto;color:#7dd3fc;font-size:13px;text-align:right}
-.popular{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.popular button{display:grid;gap:6px}
-.popular .price{margin:0;text-align:left}
-nav{position:fixed;bottom:0;left:0;right:0;background:#101b2c;display:flex;justify-content:center;padding:8px 0 max(8px,env(safe-area-inset-bottom));border-top:1px solid #29384d}
-nav button{background:none;text-align:center;font-size:12px;flex:1;max-width:160px;padding:10px 2px}
-nav button.active{color:#38bdf8}
-.note{padding:16px;border:1px solid #34465d;border-radius:14px;margin:12px 0}
-.primary{width:100%;margin-top:16px;background:#38bdf8;color:#080f1c;text-align:center;font-weight:bold}
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.stats h2{color:#38bdf8}
-.error{color:#fca5a5}
-[hidden]{display:none!important}
+
+body{
+    margin:0;
+    background:#080f1c;
+    color:#eef6ff;
+    font:16px system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+}
+
+main{
+    max-width:640px;
+    margin:auto;
+    padding:24px 18px 120px;
+}
+
+h1{
+    color:#38bdf8;
+    font-size:32px;
+    font-weight:800;
+    font-style:italic;
+    letter-spacing:-1.5px;
+    margin:0 0 24px;
+}
+
+h2{
+    font-size:22px;
+    letter-spacing:-.5px;
+}
+
+p,small{
+    color:#a5b8ce;
+    line-height:1.6;
+}
+
+.hero{
+    position:relative;
+    overflow:hidden;
+    background:
+        radial-gradient(circle at 90% 15%,
+        #0ea5e955,transparent 55%),
+        linear-gradient(135deg,#123b62,#102036);
+    border:1px solid #38bdf830;
+    padding:28px 24px;
+    border-radius:26px;
+    box-shadow:0 12px 32px #00000030;
+}
+
+.hero h2{
+    font-size:30px;
+    line-height:1.2;
+    margin:16px 0 10px;
+}
+
+.hero small{
+    color:#bae6fd;
+}
+
+input,select,button{
+    font:inherit;
+    color:inherit;
+}
+
+input,select{
+    width:100%;
+    background:#111e30;
+    border:1px solid #293d55;
+    border-radius:16px;
+    padding:16px;
+    margin-top:12px;
+    outline:none;
+}
+
+input:focus,select:focus{
+    border-color:#38bdf8;
+    box-shadow:0 0 0 3px #38bdf820;
+}
+
+button{
+    cursor:pointer;
+    border:1px solid #ffffff08;
+    border-radius:16px;
+    background:#142236;
+    padding:16px;
+    text-align:left;
+    transition:transform .15s,background .15s;
+}
+
+button:active{
+    transform:scale(.97);
+}
+
+button:disabled{
+    opacity:.5;
+    cursor:default;
+}
+
+button:focus-visible{
+    outline:2px solid #38bdf8;
+}
+
+.country{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    width:100%;
+    margin:8px 0;
+    min-height:72px;
+}
+
+.flag{
+    font-size:30px;
+}
+
+.price{
+    margin-left:auto;
+    color:#7dd3fc;
+    font-size:14px;
+    font-weight:600;
+    text-align:right;
+}
+
+.popular{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+}
+
+.popular button{
+    display:grid;
+    gap:10px;
+    min-height:140px;
+    padding:18px;
+    border-radius:22px;
+    background:linear-gradient(
+        145deg,#1c3550,#111e30
+    );
+    border:1px solid #38bdf820;
+}
+
+.popular .flag{
+    font-size:38px;
+}
+
+.popular .price{
+    margin:0;
+    text-align:left;
+}
+
+nav{
+    position:fixed;
+    bottom:0;
+    left:0;
+    right:0;
+    z-index:100;
+    background:#101b2cf5;
+    backdrop-filter:blur(20px);
+    display:flex;
+    justify-content:center;
+    padding:10px 0 max(
+        12px,env(safe-area-inset-bottom)
+    );
+    border-top:1px solid #29384d;
+}
+
+nav button{
+    background:none;
+    border:0;
+    text-align:center;
+    font-size:12px;
+    line-height:1.8;
+    flex:1;
+    max-width:160px;
+    padding:10px 2px;
+    color:#94a3b8;
+}
+
+nav button.active{
+    color:#38bdf8;
+    font-weight:700;
+}
+
+.note{
+    padding:20px;
+    border:1px solid #293d55;
+    border-radius:22px;
+    margin:14px 0;
+    background:#111e30;
+}
+
+.primary{
+    width:100%;
+    margin-top:18px;
+    background:linear-gradient(
+        135deg,#38bdf8,#0ea5e9
+    );
+    color:#080f1c;
+    text-align:center;
+    font-weight:750;
+    padding:17px;
+    box-shadow:0 6px 24px #0ea5e930;
+}
+
+.stats{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+}
+
+.stats h2{
+    color:#38bdf8;
+    font-size:32px;
+    margin:12px 0;
+}
+
+#connection{
+    font-size:12px;
+    margin:14px 0 4px;
+}
+
+.error{
+    color:#fca5a5;
+}
+
+[hidden]{
+    display:none!important;
+}
+
+@media(prefers-reduced-motion:reduce){
+    button{transition:none}
+    button:active{transform:none}
+}
 </style>
+
 </head>
 <body>
 <main>
