@@ -305,6 +305,43 @@ nav button.active span{
     color:#38bdf8;
 }
 
+.tariff-card{
+    background:linear-gradient(145deg,#172e47,#111e30);
+    border:1px solid #38bdf840;
+    border-radius:26px;
+    padding:24px;
+    margin:18px 0;
+    box-shadow:0 10px 30px #00000030;
+}
+
+.tariff-label{
+    color:#38bdf8;
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:2px;
+}
+
+.tariff-data{
+    font-size:28px;
+    margin:16px 0;
+}
+
+.tariff-price{
+    border-top:1px solid #293d55;
+    padding-top:20px;
+    margin-top:20px;
+    font-size:34px;
+    font-weight:800;
+    color:#38bdf8;
+}
+
+.tariff-note{
+    display:block;
+    text-align:center;
+    font-size:11px;
+    margin-top:14px;
+}
+
 </style>
 
 </head>
@@ -580,15 +617,36 @@ $('status').textContent=!catalogReady
 ?'Тестовые тарифы. Оплата отключена.'
 :'Тарифы появятся после подключения поставщика.';
 
-plans.forEach(t=>{
-const b=element('button',undefined,'country');
-const name=element('span',t.data+' · '+t.days+' дн.');
-const price=element('span',money(t.price),'price');
 
-b.append(name,price);
-b.onclick=()=>confirmOrder(t);
-$('plans').append(b);
+plans.forEach(t=>{
+    const card=element('div',undefined,'tariff-card');
+
+    const data=t.data.toLowerCase()==='unlimited'
+        ?'Безлимитный интернет'
+        :t.data;
+
+    card.append(
+        element('small','ТАРИФ ESIMUR','tariff-label'),
+        element('h2',data,'tariff-data'),
+        element('p','📅 Срок действия: '+t.days+' дн.'),
+        element('p','📱 Цифровая eSIM'),
+        element('div',money(t.price),'tariff-price')
+    );
+
+    const button=element(
+        'button','Выбрать тариф','primary'
+    );
+
+    button.onclick=()=>confirmOrder(t);
+
+    card.append(
+        button,
+        element('small','Тестовый режим · Оплата отключена','tariff-note')
+    );
+
+    $('plans').append(card);
 });
+
 }
 
 function confirmOrder(t){
