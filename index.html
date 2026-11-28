@@ -1,63 +1,468 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>eSIMur</title><script src="https://telegram.org/js/telegram-web-app.js"></script><style>
-*{box-sizing:border-box}body{margin:0;background:#080f1c;color:#eef6ff;font:16px system-ui}main{max-width:640px;margin:auto;padding:20px 16px 100px}h1{color:#38bdf8;font-style:italic;margin:0 0 20px}h2{font-size:21px}p,small{color:#a5b8ce;line-height:1.5}.hero{background:linear-gradient(125deg,#123b62,#102036);padding:24px;border-radius:22px}input,select,button{font:inherit;color:inherit}input,select{width:100%;background:#172438;border:1px solid #30445e;border-radius:12px;padding:13px;margin-top:12px}button{cursor:pointer;border:0;border-radius:12px;background:#142236;padding:14px;text-align:left}button:focus-visible{outline:2px solid #38bdf8}.country{display:flex;align-items:center;gap:12px;width:100%;margin:7px 0}.flag{font-size:26px}.price{margin-left:auto;color:#7dd3fc;font-size:13px;text-align:right}.popular{display:grid;grid-template-columns:1fr 1fr;gap:8px}.popular button{display:grid;gap:6px}.popular .price{margin:0;text-align:left}nav{position:fixed;bottom:0;left:0;right:0;background:#101b2c;display:flex;justify-content:center;padding:8px 0 max(8px,env(safe-area-inset-bottom));border-top:1px solid #29384d}nav button{background:none;text-align:center;font-size:12px;flex:1;max-width:160px;padding:10px 2px}nav button.active{color:#38bdf8}.note{padding:12px;border:1px solid #34465d;border-radius:12px} [hidden]{display:none!important}
-</style></head><body><main><h1>eSIMur</h1><section id="home"><div class="hero"><small id="hello">Добро пожаловать!</small><h2>Весь мир на связи 🌍</h2><p>Мобильный интернет для путешествий</p><small>Демонстрационный каталог · покрытие уточняется</small></div><input id="search" type="search" placeholder="Найти страну…" aria-label="Поиск страны"><select id="region" aria-label="Регион"></select><section id="popular"><h2>Популярные направления</h2><div class="popular" id="popularList"></div></section><h2 id="count"></h2><div id="list"></div></section><section id="detail" hidden><button id="back">← Все страны</button><h2 id="countryTitle"></h2><p id="status"></p><div id="plans"></div></section><section id="other" hidden><h2 id="otherTitle"></h2><p id="otherText"></p></section></main><nav id="nav"><button data-tab="home" class="active">⌂<br>Главная</button><button data-tab="esim">▣<br>Мои eSIM</button><button data-tab="help">?<br>Поддержка</button><button data-tab="profile">○<br>Профиль</button></nav><script>
-const groups={ 'Европа':'AL AD AT BE BA BG BY CH CY CZ DE DK EE ES FI FR GB GR HR HU IE IS IT LI LT LU LV MC MD ME MK MT NL NO PL PT RO RS SE SI SK SM UA VA XK RU', 'Азия':'AF AM AZ BD BT BN CN GE HK ID IN JP KG KH KR KZ LA LK MM MN MO MV MY NP PK PH SG TH TJ TL TM TW UZ VN', 'Ближний Восток':'AE BH IL IQ IR JO KW LB OM PS QA SA SY TR YE', 'Африка':'DZ AO BJ BW BF BI CV CM CF TD KM CG CD DJ EG GQ ER SZ ET GA GM GH GN GW CI KE LS LR LY MG MW ML MR MU MA MZ NA NE NG RW ST SN SC SL SO ZA SS SD TZ TG TN UG ZM ZW', 'Северная Америка':'AG BS BB BZ CA CR CU DM DO SV GD GT HT HN JM MX NI PA KN LC VC TT US PR', 'Южная Америка':'AR BO BR CL CO EC GY PY PE SR UY VE', 'Океания':'AU FJ KI MH FM NR NZ PW PG WS SB TO TV VU NC PF GU'};
-const data={TR:[500,1000,1800,3000,340,620,1190],AE:[400,1000,2400,1180,2280,4480],VN:[170,330,710,500,750,1330],KZ:[310,640,1310,730,1250,2200],TH:[210,670,1400,570,1000,2170],US:[210,540,1250,700,1290,2340]};const names=new Intl.DisplayNames(['ru'],{type:'region'});const countries=Object.entries(groups).flatMap(([region,codes])=>codes.split(' ').map(code=>({code,region,name:names.of(code),flag:[...code].map(c=>String.fromCodePoint(127397+c.charCodeAt(0))).join('')}))).sort((a,b)=>a.name.localeCompare(b.name,'ru'));
-const $=id=>document.getElementById(id);const tg=window.Telegram?.WebApp;tg?.ready();tg?.expand();const user=tg?.initDataUnsafe?.user;if(user?.first_name)$('hello').textContent='Привет, '+user.first_name+'!';
-function show(id){for(const x of ['home','detail','other'])$(x).hidden=x!==id;window.scrollTo(0,0)}function countryButton(c,pop=false){const b=document.createElement('button');b.className=pop?'':'country';const flag=document.createElement('span');flag.className='flag';flag.textContent=c.flag;const name=document.createElement('span');name.textContent=c.name;const price=document.createElement('span');price.className='price';price.textContent=data[c.code]?'от '+Math.min(...data[c.code])+' ₽ · демо':'Уточняется';b.append(flag,name,price);b.onclick=()=>openCountry(c);return b}
-function render(){const q=$('search').value.trim().toLocaleLowerCase('ru');const r=$('region').value;const filtered=countries.filter(c=>(!r||c.region===r)&&(!q||c.name.toLocaleLowerCase('ru').includes(q)||c.code.toLowerCase()===q));$('popular').hidden=!!(q||r);$('count').textContent='Направления: '+filtered.length;$('list').replaceChildren(...filtered.map(c=>countryButton(c)));if(!filtered.length)$('list').textContent='Ничего не найдено';}
-function openCountry(c){show('detail');$('countryTitle').textContent=c.flag+' '+c.name;$('plans').replaceChildren();$('status').textContent=data[c.code]?'Демонстрационные тарифы. Покупка пока недоступна.':'Тарифы появятся после подключения поставщика.';if(!data[c.code])return;const labels=c.code==='TR'?['Unlimited 3 days','Unlimited 7 days','Unlimited 14 days','Unlimited 30 days','5 GB - 30 days','10 GB - 30 days','20 GB - 30 days']:['Unlimited 1 day','Unlimited 3 days','Unlimited 7 days','5 GB - 30 days','10 GB - 30 days','20 GB - 30 days'];data[c.code].forEach((p,i)=>{const b=document.createElement('button');b.className='country';const n=document.createElement('span');n.textContent=labels[i];const v=document.createElement('span');v.className='price';v.textContent=p+' ₽';b.append(n,v);b.onclick=()=>{alert('Демонстрационный тариф: '+labels[i]+' — '+p+' ₽. Оплата не подключена.')};$('plans').append(b)})}
-$('region').add(new Option('Все регионы',''));Object.keys(groups).forEach(r=>$('region').add(new Option(r,r)));$('search').oninput=render;$('region').onchange=render;$('back').onclick=()=>show('home');$('popularList').replaceChildren(...['TR','AE','TH','VN','KZ','US'].map(code=>countryButton(countries.find(c=>c.code===code),true)));const tabs={esim:['Мои eSIM','Выдача eSIM пока не подключена.'],help:['Поддержка','Раздел поддержки готовится.'],profile:['Профиль',user?.first_name?'Имя: '+user.first_name:'Гостевой режим']};document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x===b));const t=b.dataset.tab;if(t==='home')show('home');else{$('otherTitle').textContent=tabs[t][0];$('otherText').textContent=tabs[t][1];show('other')}});render();
-function renderMyEsim() {
-    $('otherTitle').textContent = 'Мои eSIM';
-    $('otherText').innerHTML = `
-        <div class="hero">
-            <small>Личный кабинет eSIMur</small>
-            <h2>Ваши eSIM</h2>
-            <p>Управляйте интернетом в путешествиях</p>
-        </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0">
-            <div class="note">
-                <small>Активные eSIM</small>
-                <h2 style="color:#38bdf8">0</h2>
-            </div>
-            <div class="note">
-                <small>Тестовые заказы</small>
-                <h2 style="color:#38bdf8">1</h2>
-            </div>
-        </div>
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>eSIMur</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#080f1c;color:#eef6ff;font:16px system-ui}
+main{max-width:640px;margin:auto;padding:20px 16px 110px}
+h1{color:#38bdf8;font-style:italic;margin:0 0 20px}
+h2{font-size:21px}
+p,small{color:#a5b8ce;line-height:1.5}
+.hero{background:linear-gradient(125deg,#123b62,#102036);padding:24px;border-radius:22px}
+input,select,button{font:inherit;color:inherit}
+input,select{width:100%;background:#172438;border:1px solid #30445e;border-radius:12px;padding:13px;margin-top:12px}
+button{cursor:pointer;border:0;border-radius:12px;background:#142236;padding:14px;text-align:left}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible{outline:2px solid #38bdf8}
+.country{display:flex;align-items:center;gap:12px;width:100%;margin:7px 0}
+.flag{font-size:26px}
+.price{margin-left:auto;color:#7dd3fc;font-size:13px;text-align:right}
+.popular{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.popular button{display:grid;gap:6px}
+.popular .price{margin:0;text-align:left}
+nav{position:fixed;bottom:0;left:0;right:0;background:#101b2c;display:flex;justify-content:center;padding:8px 0 max(8px,env(safe-area-inset-bottom));border-top:1px solid #29384d}
+nav button{background:none;text-align:center;font-size:12px;flex:1;max-width:160px;padding:10px 2px}
+nav button.active{color:#38bdf8}
+.note{padding:16px;border:1px solid #34465d;border-radius:14px;margin:12px 0}
+.primary{width:100%;margin-top:16px;background:#38bdf8;color:#080f1c;text-align:center;font-weight:bold}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stats h2{color:#38bdf8}
+.error{color:#fca5a5}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<h1>eSIMur</h1>
 
-        <div class="note" style="background:#142236">
-            <small style="color:#38bdf8">ДЕМО</small>
-            <h2>🇹🇷 Турция</h2>
-            <p>Unlimited · 3 days</p>
-            <hr style="border:0;border-top:1px solid #34465d">
-            <p>Стоимость: <b>500 ₽</b></p>
-            <p>Статус: демонстрационный заказ</p>
-            <div class="note" style="text-align:center">
-                <span style="font-size:36px">▦</span>
-                <p>Установка пока недоступна</p>
-                <small>Поставщик eSIM ещё не подключён</small>
-            </div>
-        </div>
+<section id="home">
+<div class="hero">
+<small id="hello">Добро пожаловать!</small>
+<h2>Весь мир на связи 🌍</h2>
+<p>Мобильный интернет для путешествий</p>
+<small>Тестовый режим · Оплата отключена</small>
+</div>
 
-        <button id="newEsim" style="width:100%;margin-top:16px;background:#38bdf8;color:#080f1c;text-align:center;font-weight:bold">
-            + Выбрать новую eSIM
-        </button>
-    `;
+<p id="connection">Подключение к серверу…</p>
+<input id="search" type="search" placeholder="Найти страну…" aria-label="Поиск страны">
+<select id="region" aria-label="Регион"></select>
 
-    $('newEsim').onclick = () => {
-        document.querySelector('[data-tab="home"]').click();
-    };
+<section id="popular">
+<h2>Популярные направления</h2>
+<div class="popular" id="popularList"></div>
+</section>
 
-    show('other');
+<h2 id="count"></h2>
+<div id="list"></div>
+</section>
+
+<section id="detail" hidden>
+<button id="back">← Все страны</button>
+<h2 id="countryTitle"></h2>
+<p id="status"></p>
+<div id="plans"></div>
+</section>
+
+<section id="other" hidden>
+<h2 id="otherTitle"></h2>
+<div id="otherText"></div>
+</section>
+</main>
+
+<nav id="nav">
+<button data-tab="home" class="active">⌂<br>Главная</button>
+<button data-tab="esim">▣<br>Мои eSIM</button>
+<button data-tab="help">?<br>Поддержка</button>
+<button data-tab="profile">○<br>Профиль</button>
+</nav>
+
+<script>
+const API = 'https://api.esimur.com';
+const $ = id => document.getElementById(id);
+const tg = window.Telegram?.WebApp;
+
+tg?.ready();
+tg?.expand();
+
+let tariffs = [];
+let catalogReady = false;
+let currentTab = 'home';
+let creatingOrder = false;
+
+const groups = {
+'Европа':'EU AL AD AT BE BA BG BY CH CY CZ DE DK EE ES FI FR GB GR HU IE IS IT LI LT LU LV MC MD ME MK MT NL NO PL PT RO RS SE SI SK SM UA VA XK RU',
+'Азия':'AF AM AZ BD BT BN CN GE HK ID IN JP KG KH KR KZ LA LK MM MN MO MV MY NP PK PH SG TH TJ TL TM TW UZ VN',
+'Ближний Восток':'AE BH IL IQ IR JO KW LB OM PS QA SA SY TR YE',
+'Африка':'DZ AO BJ BW BF BI CV CM CF TD KM CG CD DJ EG GQ ER SZ ET GA GM GH GN GW CI KE LS LR LY MG MW ML MR MU MA MZ NA NE NG RW ST SN SC SL SO ZA SS SD TZ TG TN UG ZM ZW',
+'Северная Америка':'AG BS BB BZ CA CR CU DM DO SV GD GT HT HN JM MX NI PA KN LC VC TT US PR',
+'Южная Америка':'AR BO BR CL CO EC GY PY PE SR UY VE',
+'Океания':'AU FJ KI MH FM NR NZ PW PG WS SB TO TV VU NC PF GU'
+};
+
+const names = new Intl.DisplayNames(['ru'],{type:'region'});
+
+const countries = Object.entries(groups)
+.flatMap(([region,codes]) =>
+codes.split(' ').map(code => ({
+code,
+region,
+name:code === 'EU' ? 'Европа' : names.of(code),
+flag:[...code].map(c =>
+String.fromCodePoint(127397+c.charCodeAt(0))).join('')
+})))
+.sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+
+function element(tag,text,className){
+const e=document.createElement(tag);
+if(text!==undefined)e.textContent=text;
+if(className)e.className=className;
+return e;
 }
 
-document.querySelector('[data-tab="esim"]').onclick = () => {
-    document.querySelectorAll('nav button').forEach(b => {
-        b.classList.toggle('active', b.dataset.tab === 'esim');
-    });
-    renderMyEsim();
+function money(value){
+return Number(value).toLocaleString('ru-RU')+' ₽';
+}
+
+async function api(path,method='GET',auth=true){
+const headers={};
+
+if(auth){
+if(!tg?.initData){
+throw new Error('Откройте приложение через Telegram.');
+}
+headers['X-Telegram-Init-Data']=tg.initData;
+}
+
+const response=await fetch(API+path,{
+method,
+headers,
+cache:'no-store'
+});
+
+if(response.status===401){
+throw new Error('Авторизация недоступна. Закройте и заново откройте приложение.');
+}
+
+if(!response.ok){
+throw new Error('Ошибка сервера: '+response.status);
+}
+
+return response.json();
+}
+
+function show(id){
+for(const x of ['home','detail','other']){
+$(x).hidden=x!==id;
+}
+window.scrollTo(0,0);
+}
+
+function countryTariffs(code){
+return tariffs.filter(t=>t.country_code===code);
+}
+
+function countryButton(c,pop=false){
+const b=element('button',undefined,pop?'':'country');
+const plans=countryTariffs(c.code);
+
+const flag=element('span',c.flag,'flag');
+const name=element('span',c.name);
+const price=element('span',
+plans.length
+?'от '+money(Math.min(...plans.map(t=>t.price)))
+:catalogReady?'Уточняется':'—',
+'price');
+
+b.append(flag,name,price);
+b.onclick=()=>openCountry(c);
+return b;
+}
+
+function render(){
+const q=$('search').value.trim().toLocaleLowerCase('ru');
+const r=$('region').value;
+
+const filtered=countries.filter(c=>
+(!r||c.region===r)&&
+(!q||c.name.toLocaleLowerCase('ru').includes(q)
+||c.code.toLowerCase()===q));
+
+$('popular').hidden=!!(q||r);
+$('count').textContent='Направления: '+filtered.length;
+
+$('list').replaceChildren(
+...filtered.map(c=>countryButton(c))
+);
+
+if(!filtered.length){
+$('list').textContent='Ничего не найдено';
+}
+
+$('popularList').replaceChildren(
+...['TR','AE','TH','EG','US','EU']
+.map(code=>countries.find(c=>c.code===code))
+.filter(Boolean)
+.map(c=>countryButton(c,true))
+);
+}
+
+async function loadCatalog(){
+try{
+const result=await api('/catalog','GET',false);
+
+if(!Array.isArray(result.tariffs)){
+throw new Error('Некорректный каталог');
+}
+
+tariffs=result.tariffs;
+catalogReady=true;
+$('connection').textContent='● Сервер подключён';
+$('connection').style.color='#4ade80';
+render();
+
+}catch(e){
+$('connection').textContent='Не удалось загрузить тарифы';
+$('connection').className='error';
+}
+}
+
+async function loadProfile(){
+try{
+const result=await api('/me');
+if(result.first_name){
+$('hello').textContent='Привет, '+result.first_name+'!';
+}
+return result;
+}catch(e){
+return null;
+}
+}
+
+function openCountry(c){
+show('detail');
+
+$('countryTitle').textContent=c.flag+' '+c.name;
+$('plans').replaceChildren();
+
+const plans=countryTariffs(c.code);
+
+$('status').textContent=!catalogReady
+?'Каталог пока недоступен.'
+:plans.length
+?'Тестовые тарифы. Оплата отключена.'
+:'Тарифы появятся после подключения поставщика.';
+
+plans.forEach(t=>{
+const b=element('button',undefined,'country');
+const name=element('span',t.data+' · '+t.days+' дн.');
+const price=element('span',money(t.price),'price');
+
+b.append(name,price);
+b.onclick=()=>confirmOrder(t);
+$('plans').append(b);
+});
+}
+
+function confirmOrder(t){
+$('plans').replaceChildren();
+
+const card=element('div',undefined,'note');
+
+card.append(
+element('h2',t.flag+' '+t.country),
+element('p','Интернет: '+t.data),
+element('p','Срок: '+t.days+' дн.'),
+element('h2',money(t.price)),
+element('p','Это тестовый заказ. Деньги не списываются.')
+);
+
+const button=element('button','Создать тестовый заказ','primary');
+const message=element('p','');
+
+button.onclick=async()=>{
+if(creatingOrder)return;
+
+creatingOrder=true;
+button.disabled=true;
+button.textContent='Создание заказа…';
+
+try{
+const order=await api(
+'/orders?tariff_id='+encodeURIComponent(t.id),
+'POST'
+);
+
+message.textContent='Тестовый заказ №'+order.order_id+' создан';
+button.textContent='Заказ создан';
+
+document.querySelector('[data-tab="esim"]').click();
+
+}catch(e){
+message.textContent=e.message;
+message.className='error';
+button.disabled=false;
+button.textContent='Повторить';
+}finally{
+creatingOrder=false;
+}
 };
-</script></body></html>
+
+card.append(button,message);
+$('plans').append(card);
+}
+
+async function renderMyEsim(){
+$('otherTitle').textContent='Мои eSIM';
+$('otherText').textContent='Загрузка заказов…';
+show('other');
+
+try{
+const result=await api('/orders');
+
+if(currentTab!=='esim')return;
+
+if(!Array.isArray(result.orders)){
+throw new Error('Некорректный список заказов');
+}
+
+const orders=result.orders;
+const root=$('otherText');
+root.replaceChildren();
+
+const hero=element('div',undefined,'hero');
+hero.append(
+element('small','Личный кабинет eSIMur'),
+element('h2','Ваши eSIM'),
+element('p','Управляйте интернетом в путешествиях')
+);
+
+root.append(hero);
+
+const stats=element('div',undefined,'stats');
+
+const active=element('div',undefined,'note');
+active.append(
+element('small','Активные eSIM'),
+element('h2','0')
+);
+
+const tests=element('div',undefined,'note');
+tests.append(
+element('small','Тестовые заказы'),
+element('h2',String(orders.filter(o=>o.status==='test').length))
+);
+
+stats.append(active,tests);
+root.append(stats);
+
+if(!orders.length){
+root.append(element('p','У вас пока нет заказов.'));
+}
+
+orders.forEach(o=>{
+const card=element('div',undefined,'note');
+card.style.background='#142236';
+
+const tariff=tariffs.find(t=>t.country===o.country);
+const flag=tariff?.flag||'🌍';
+
+card.append(
+element('small','Заказ №'+o.id),
+element('h2',flag+' '+o.country),
+element('p',o.tariff),
+element('p','Стоимость: '+money(o.price)),
+element('p','Статус: '+(o.status==='test'
+?'Тестовый заказ':o.status))
+);
+
+const install=element('div',undefined,'note');
+install.style.textAlign='center';
+
+install.append(
+element('h2','▦'),
+element('p','Установка пока недоступна'),
+element('small','Поставщик eSIM ещё не подключён')
+);
+
+card.append(install);
+root.append(card);
+});
+
+const button=element('button','+ Выбрать новую eSIM','primary');
+button.onclick=()=>document.querySelector('[data-tab="home"]').click();
+root.append(button);
+
+}catch(e){
+if(currentTab==='esim'){
+$('otherText').textContent=e.message;
+}
+}
+}
+
+async function renderProfile(){
+$('otherTitle').textContent='Профиль';
+$('otherText').textContent='Проверка авторизации…';
+show('other');
+
+const user=await loadProfile();
+
+if(currentTab!=='profile')return;
+
+if(!user){
+$('otherText').textContent='Не удалось подтвердить авторизацию Telegram.';
+return;
+}
+
+const card=element('div',undefined,'note');
+
+card.append(
+element('h2',user.first_name||'Пользователь'),
+element('p','Telegram ID: '+user.telegram_id),
+element('p','Авторизация подтверждена')
+);
+
+$('otherText').replaceChildren(card);
+}
+
+$('region').add(new Option('Все регионы',''));
+
+Object.keys(groups).forEach(r=>
+$('region').add(new Option(r,r))
+);
+
+$('search').oninput=render;
+$('region').onchange=render;
+$('back').onclick=()=>show('home');
+
+document.querySelectorAll('nav button').forEach(b=>{
+b.onclick=()=>{
+currentTab=b.dataset.tab;
+
+document.querySelectorAll('nav button').forEach(x=>
+x.classList.toggle('active',x===b));
+
+if(currentTab==='home'){
+show('home');
+}else if(currentTab==='esim'){
+renderMyEsim();
+}else if(currentTab==='profile'){
+renderProfile();
+}else{
+$('otherTitle').textContent='Поддержка';
+$('otherText').textContent='Раздел поддержки готовится.';
+show('other');
+}
+};
+});
+
+render();
+loadCatalog();
+loadProfile();
+</script>
+</body>
+</html>
