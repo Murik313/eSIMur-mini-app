@@ -8,4 +8,56 @@ function show(id){for(const x of ['home','detail','other'])$(x).hidden=x!==id;wi
 function render(){const q=$('search').value.trim().toLocaleLowerCase('ru');const r=$('region').value;const filtered=countries.filter(c=>(!r||c.region===r)&&(!q||c.name.toLocaleLowerCase('ru').includes(q)||c.code.toLowerCase()===q));$('popular').hidden=!!(q||r);$('count').textContent='Направления: '+filtered.length;$('list').replaceChildren(...filtered.map(c=>countryButton(c)));if(!filtered.length)$('list').textContent='Ничего не найдено';}
 function openCountry(c){show('detail');$('countryTitle').textContent=c.flag+' '+c.name;$('plans').replaceChildren();$('status').textContent=data[c.code]?'Демонстрационные тарифы. Покупка пока недоступна.':'Тарифы появятся после подключения поставщика.';if(!data[c.code])return;const labels=c.code==='TR'?['Unlimited 3 days','Unlimited 7 days','Unlimited 14 days','Unlimited 30 days','5 GB - 30 days','10 GB - 30 days','20 GB - 30 days']:['Unlimited 1 day','Unlimited 3 days','Unlimited 7 days','5 GB - 30 days','10 GB - 30 days','20 GB - 30 days'];data[c.code].forEach((p,i)=>{const b=document.createElement('button');b.className='country';const n=document.createElement('span');n.textContent=labels[i];const v=document.createElement('span');v.className='price';v.textContent=p+' ₽';b.append(n,v);b.onclick=()=>{alert('Демонстрационный тариф: '+labels[i]+' — '+p+' ₽. Оплата не подключена.')};$('plans').append(b)})}
 $('region').add(new Option('Все регионы',''));Object.keys(groups).forEach(r=>$('region').add(new Option(r,r)));$('search').oninput=render;$('region').onchange=render;$('back').onclick=()=>show('home');$('popularList').replaceChildren(...['TR','AE','TH','VN','KZ','US'].map(code=>countryButton(countries.find(c=>c.code===code),true)));const tabs={esim:['Мои eSIM','Выдача eSIM пока не подключена.'],help:['Поддержка','Раздел поддержки готовится.'],profile:['Профиль',user?.first_name?'Имя: '+user.first_name:'Гостевой режим']};document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x===b));const t=b.dataset.tab;if(t==='home')show('home');else{$('otherTitle').textContent=tabs[t][0];$('otherText').textContent=tabs[t][1];show('other')}});render();
+function renderMyEsim() {
+    $('otherTitle').textContent = 'Мои eSIM';
+    $('otherText').innerHTML = `
+        <div class="hero">
+            <small>Личный кабинет eSIMur</small>
+            <h2>Ваши eSIM</h2>
+            <p>Управляйте интернетом в путешествиях</p>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0">
+            <div class="note">
+                <small>Активные eSIM</small>
+                <h2 style="color:#38bdf8">0</h2>
+            </div>
+            <div class="note">
+                <small>Тестовые заказы</small>
+                <h2 style="color:#38bdf8">1</h2>
+            </div>
+        </div>
+
+        <div class="note" style="background:#142236">
+            <small style="color:#38bdf8">ДЕМО</small>
+            <h2>🇹🇷 Турция</h2>
+            <p>Unlimited · 3 days</p>
+            <hr style="border:0;border-top:1px solid #34465d">
+            <p>Стоимость: <b>500 ₽</b></p>
+            <p>Статус: демонстрационный заказ</p>
+            <div class="note" style="text-align:center">
+                <span style="font-size:36px">▦</span>
+                <p>Установка пока недоступна</p>
+                <small>Поставщик eSIM ещё не подключён</small>
+            </div>
+        </div>
+
+        <button id="newEsim" style="width:100%;margin-top:16px;background:#38bdf8;color:#080f1c;text-align:center;font-weight:bold">
+            + Выбрать новую eSIM
+        </button>
+    `;
+
+    $('newEsim').onclick = () => {
+        document.querySelector('[data-tab="home"]').click();
+    };
+
+    show('other');
+}
+
+document.querySelector('[data-tab="esim"]').onclick = () => {
+    document.querySelectorAll('nav button').forEach(b => {
+        b.classList.toggle('active', b.dataset.tab === 'esim');
+    });
+    renderMyEsim();
+};
 </script></body></html>
