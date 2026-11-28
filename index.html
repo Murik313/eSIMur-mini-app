@@ -411,6 +411,50 @@ nav button.active span{
     color:#64748b;
     margin-top:28px;
 }
+
+.checkout-card{
+    background:linear-gradient(145deg,#173b59,#111e30);
+    border:1px solid #38bdf840;
+    border-radius:26px;
+    padding:24px;
+    margin:18px 0;
+}
+
+.checkout-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    padding:18px 0;
+    border-bottom:1px solid #293d55;
+    font-size:14px;
+}
+
+.checkout-row span{
+    color:#a5b8ce;
+}
+
+.checkout-total{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding-top:20px;
+}
+
+.checkout-total h2{
+    color:#38bdf8;
+    font-size:34px;
+    margin:0;
+}
+
+.checkout-back{
+    width:100%;
+    background:transparent;
+    border:0;
+    text-align:center;
+    color:#94a3b8;
+    margin-top:10px;
+}
 </style>
 
 </head>
@@ -718,52 +762,104 @@ plans.forEach(t=>{
 
 }
 
+
 function confirmOrder(t){
-$('plans').replaceChildren();
+    $('plans').replaceChildren();
+    $('countryTitle').textContent='Оформление заказа';
+    $('status').textContent='Проверьте выбранный тариф';
 
-const card=element('div',undefined,'note');
+    const card=element('div',undefined,'checkout-card');
 
-card.append(
-element('h2',t.flag+' '+t.country),
-element('p','Интернет: '+t.data),
-element('p','Срок: '+t.days+' дн.'),
-element('h2',money(t.price)),
-element('p','Это тестовый заказ. Деньги не списываются.')
-);
+    const data=t.data.toLowerCase()==='unlimited'
+        ?'Безлимит'
+        :t.data;
 
-const button=element('button','Создать тестовый заказ','primary');
-const message=element('p','');
+    card.append(
+        element('small','ВАШ ЗАКАЗ'),
+        element('h2',t.flag+' '+t.country)
+    );
 
-button.onclick=async()=>{
-if(creatingOrder)return;
+    const rows=[
+        ['🌐 Интернет',data],
+        ['📅 Срок действия',t.days+' дн.'],
+        ['📱 Тип SIM','eSIM']
+    ];
 
-creatingOrder=true;
-button.disabled=true;
-button.textContent='Создание заказа…';
+    rows.forEach(([label,value])=>{
+        const row=element('div',undefined,'checkout-row');
 
-try{
-const order=await api(
-'/orders?tariff_id='+encodeURIComponent(t.id),
-'POST'
-);
+        row.append(
+            element('span',label),
+            element('strong',value)
+        );
 
-message.textContent='Тестовый заказ №'+order.order_id+' создан';
-button.textContent='Заказ создан';
+        card.append(row);
+    });
 
-document.querySelector('[data-tab="esim"]').click();
+    const total=element('div',undefined,'checkout-total');
 
-}catch(e){
-message.textContent=e.message;
-message.className='error';
-button.disabled=false;
-button.textContent='Повторить';
-}finally{
-creatingOrder=false;
-}
-};
+    total.append(
+        element('small','Итого'),
+        element('h2',money(t.price))
+    );
 
-card.append(button,message);
-$('plans').append(card);
+    card.append(total);
+
+    const notice=element('div',undefined,'note');
+
+    notice.append(
+        element('strong','🛡 Тестовый заказ'),
+        element('p','Деньги не списываются.')
+    );
+
+    const button=element(
+        'button','Создать тестовый заказ','primary'
+    );
+
+    const back=element(
+        'button','← Вернуться к тарифам','checkout-back'
+    );
+
+    const message=element('p','');
+
+    back.onclick=()=>{
+        const country=countries.find(c=>c.code===t.country_code);
+        if(country)openCountry(country);
+    };
+
+    button.onclick=async()=>{
+        if(creatingOrder)return;
+
+        creatingOrder=true;
+        button.disabled=true;
+        back.disabled=true;
+        button.textContent='Создание заказа…';
+
+        try{
+            const order=await api(
+                '/orders?tariff_id='+encodeURIComponent(t.id),
+                'POST'
+            );
+
+            message.textContent='Заказ №'+order.order_id+' создан';
+            button.textContent='Заказ создан';
+
+            document.querySelector('[data-tab="esim"]').click();
+
+        }catch(e){
+            message.textContent=e.message;
+            message.className='error';
+            button.disabled=false;
+            back.disabled=false;
+            button.textContent='Повторить';
+        }finally{
+            creatingOrder=false;
+        }
+    };
+
+    $('plans').append(
+        card,notice,button,back,message
+    );
 }
 
 async function renderMyEsim(){
