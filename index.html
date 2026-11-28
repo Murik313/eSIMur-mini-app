@@ -341,7 +341,33 @@ nav button.active span{
     font-size:11px;
     margin-top:14px;
 }
+.support-card{
+    background:#142236;
+    border:1px solid #293d55;
+    border-radius:18px;
+    padding:20px;
+    margin:12px 0;
+}
 
+.support-card summary{
+    cursor:pointer;
+    font-size:15px;
+    font-weight:650;
+}
+
+.support-card summary::marker{
+    color:#38bdf8;
+}
+
+.support-card[open]{
+    border-color:#38bdf8;
+    background:#172e47;
+}
+
+.support-card p{
+    font-size:14px;
+    margin-bottom:0;
+}
 </style>
 
 </head>
@@ -810,6 +836,57 @@ element('p','Авторизация подтверждена')
 $('otherText').replaceChildren(card);
 }
 
+function renderSupport(){
+    $('otherTitle').textContent='Поддержка';
+
+    const root=$('otherText');
+    root.replaceChildren();
+
+    const hero=element('div',undefined,'hero');
+
+    hero.append(
+        element('small','ESIMUR SUPPORT'),
+        element('h2','🎧 Чем можем помочь?'),
+        element('p','Помощь с подключением и использованием eSIM')
+    );
+
+    root.append(hero);
+
+    const items=[
+        [
+            '💬 Связаться с поддержкой',
+            'Служба поддержки готовится к запуску.'
+        ],
+        [
+            '📱 Как установить eSIM',
+            'После подключения поставщика инструкция появится в разделе «Мои eSIM».'
+        ],
+        [
+            '❓ Что такое eSIM?',
+            'eSIM — цифровая SIM-карта, которая работает без физической SIM-карты.'
+        ],
+        [
+            '🌍 Когда появятся реальные тарифы?',
+            'После подключения поставщика и платёжной системы.'
+        ],
+        [
+            '✓ Совместимость устройств',
+            'Проверьте поддержку eSIM в настройках телефона или на сайте производителя.'
+        ]
+    ];
+
+    items.forEach(([title,answer])=>{
+        const item=element('details',undefined,'support-card');
+
+        item.append(
+            element('summary',title),
+            element('p',answer)
+        );
+
+        root.append(item);
+    });
+}
+
 $('region').add(new Option('Все регионы',''));
 
 Object.keys(groups).forEach(r=>
@@ -834,8 +911,7 @@ renderMyEsim();
 }else if(currentTab==='profile'){
 renderProfile();
 }else{
-$('otherTitle').textContent='Поддержка';
-$('otherText').textContent='Раздел поддержки готовится.';
+renderSupport();
 show('other');
 }
 };
